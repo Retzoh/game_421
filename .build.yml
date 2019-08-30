@@ -1,4 +1,4 @@
-image: alpine/edge
+image: debian/stable
 packages:
   - wget
 sources:
@@ -15,6 +15,26 @@ secrets:
   - 7331599a-5f2d-4b4f-9c92-e0a1483014e3  # ~/.ssh/.build_test_ssh_key
   - 899472e5-1ec8-4211-a00b-05a0d3eaf775  # ~/.ssh/.github_deploy_ssh_key
 tasks:
+- setup_nvm: |
+    touch ~/.bashrc
+    echo 'source ~/.bashrc' >> .buildenv
+    wget -nv -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
+
+    echo 'export NVM_DIR="$HOME/.nvm"' >> ~/.buildenv
+    echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> .buildenv
+
+- setup_npm: |
+    nvm --version
+    nvm install node
+
+- setup_elm: |
+    npm --version
+
+    npm install -g elm
+
+    elm --version
+
+
 - deploy_master_github: |
     ln -sf ~/.ssh/.build_test_ssh_key ~/.ssh/id_rsa
 
