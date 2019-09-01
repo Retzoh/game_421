@@ -4,7 +4,7 @@ import Browser
 import Delay exposing (TimeUnit(..), after)
 import Dict exposing (Dict)
 import Html exposing (..)
-import Html.Attributes exposing (src)
+import Html.Attributes exposing (disabled, src)
 import Html.Events exposing (..)
 import Random
 import Svg exposing (..)
@@ -30,13 +30,20 @@ main =
 
 type alias Model =
     { dices : List Dice
+    , numRolls : Int
     }
 
 
 type alias Dice =
-    { face : Face
+    { status : Status
+    , face : Face
     , reboundsLeft : Int
     }
+
+
+type Status
+    = Locked
+    | Unlocked
 
 
 type alias Face =
@@ -53,7 +60,7 @@ type alias Coords =
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( Model []
+    ( Model (List.repeat numDices (Dice Unlocked 1 0)) 0
     , Cmd.none
     )
 
@@ -88,16 +95,19 @@ type Msg
     = Roll
     | ShowFaces (List Dice)
     | Rebound
+    | ToggleDice Int
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Roll ->
-            ( model, generateNewFacesThen ShowFaces )
+            ( prepareModelForRoll model
+            , generateNewFacesThen (updateDices model ifUnlocked)
+            )
 
         ShowFaces dices ->
-            ( Model dices
+            ( Model dices model.numRolls
             , if oneStillRolling dices then
                 after 200 Millisecond Rebound
 
@@ -106,14 +116,48 @@ update msg model =
             )
 
         Rebound ->
-            ( model, generateNewFacesThen (updateRollingDices model) )
+            ( model, generateNewFacesThen (updateDices model ifRolling) )
+
+        ToggleDice dice_id ->
+            ( Model (applyOn toggleDice dice_id model.dices) model.numRolls
+            , Cmd.none
+            )
+
+
+prepareModelForRoll : Model -> Model
+prepareModelForRoll model =
+    { model | numRolls = model.numRolls + 1 }
+
+
+toggleDice : Dice -> Dice
+toggleDice dice =
+    case dice.status of
+        Locked ->
+            { dice | status = Unlocked }
+
+        Unlocked ->
+            { dice | status = Locked }
+
+
+applyOn : (a -> a) -> Int -> List a -> List a
+applyOn callable index list =
+    List.indexedMap
+        (\id ->
+            \a ->
+                if id == index then
+                    callable a
+
+                else
+                    a
+        )
+        list
 
 
 generateNewFacesThen : (List Dice -> Msg) -> Cmd Msg
 generateNewFacesThen message =
     Random.generate message
         (Random.list numDices
-            (Random.map2 Dice (Random.int 1 6) (Random.int 1 15))
+            (Random.map2 (Dice Unlocked) (Random.int 1 6) (Random.int 1 15))
         )
 
 
@@ -122,18 +166,28 @@ oneStillRolling dices =
     List.any (\dice -> dice.reboundsLeft > 0) dices
 
 
-updateRollingDices : Model -> List Dice -> Msg
-updateRollingDices model newDices =
-    ShowFaces (List.map2 updateDiceIfRolling model.dices newDices)
+updateDices : Model -> (Dice -> Dice -> Dice) -> List Dice -> Msg
+updateDices model updateMethod newDices =
+    ShowFaces (List.map2 updateMethod model.dices newDices)
 
 
-updateDiceIfRolling : Dice -> Dice -> Dice
-updateDiceIfRolling oldDice newDice =
-    if oldDice.reboundsLeft > 0 then
-        Dice newDice.face (oldDice.reboundsLeft - 1)
+ifRolling : Dice -> Dice -> Dice
+ifRolling oldDice newDice =
+    if oldDice.reboundsLeft > 0 && oldDice.status == Unlocked then
+        Dice oldDice.status newDice.face (oldDice.reboundsLeft - 1)
 
     else
         oldDice
+
+
+ifUnlocked : Dice -> Dice -> Dice
+ifUnlocked oldDice newDice =
+    case oldDice.status of
+        Locked ->
+            oldDice
+
+        Unlocked ->
+            newDice
 
 
 
@@ -152,22 +206,59 @@ subscriptions model =
 view : Model -> Html Msg
 view model =
     div []
-        [ div [] [ button [ onClick Roll ] [ Html.text "Roll" ] ]
-        , div [] (List.map drawDice model.dices)
+        [ div []
+            [ p [] [ Html.text ("Rolls: " ++ String.fromInt model.numRolls) ]
+            , button [ disabled (oneStillRolling model.dices), onClick Roll ]
+                [ Html.text "Reroll" ]
+            ]
+        , div [] (List.indexedMap drawDice model.dices)
         ]
 
 
-drawDice : Dice -> Html msg
-drawDice dice =
+drawDice : Int -> Dice -> Html Msg
+drawDice index dice =
     svg
-        [ width "120", height "120", viewBox "0 0 120 120" ]
-        (drawBorder ++ drawFace dice.face)
+        ([ width "120"
+         , height "120"
+         , viewBox "0 0 120 120"
+         ]
+            ++ toggleOnClickIfStill index dice
+        )
+        [ g (setColor dice) (drawBorder ++ drawFace dice.face) ]
+
+
+toggleOnClickIfStill : Int -> Dice -> List (Svg.Attribute Msg)
+toggleOnClickIfStill index dice =
+    if dice.reboundsLeft == 0 then
+        [ onClick (ToggleDice index) ]
+
+    else
+        []
+
+
+setColor : Dice -> List (Svg.Attribute Msg)
+setColor dice =
+    List.map (\x -> x (getColor dice)) [ stroke, fill ]
+
+
+getColor : Dice -> String
+getColor dice =
+    if dice.reboundsLeft == 0 then
+        case dice.status of
+            Locked ->
+                "green"
+
+            Unlocked ->
+                "black"
+
+    else
+        "gray"
 
 
 drawBorder : List (Svg msg)
 drawBorder =
     [ rect
-        ([ fill "none", stroke "black", x "10", y "10", width "100" ]
+        ([ fill "none", x "10", y "10", width "100" ]
             ++ [ height "100", rx "12.5", strokeWidth "1.5" ]
         )
         []
