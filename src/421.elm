@@ -60,7 +60,7 @@ type alias Coords =
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( Model (List.repeat numDices (Dice Unlocked 1 0)) 0
+    ( Model (List.repeat numDices (Dice Locked 1 0)) 3
     , Cmd.none
     )
 
@@ -93,9 +93,10 @@ numDices =
 
 type Msg
     = Roll
-    | ShowFaces (List Dice)
+    | ShowFaces
     | Rebound
     | ToggleDice Int
+    | Update (Dice -> Dice -> Dice) (List Dice)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -103,12 +104,12 @@ update msg model =
     case msg of
         Roll ->
             ( prepareModelForRoll model
-            , generateNewFacesThen (updateDices model ifUnlocked)
+            , generateNewDicesThen (Update ifUnlocked)
             )
 
-        ShowFaces dices ->
-            ( Model dices model.numRolls
-            , if oneStillRolling dices then
+        ShowFaces ->
+            ( model
+            , if oneStillRolling model.dices then
                 after 200 Millisecond Rebound
 
               else
@@ -116,17 +117,29 @@ update msg model =
             )
 
         Rebound ->
-            ( model, generateNewFacesThen (updateDices model ifRolling) )
+            ( model, generateNewDicesThen (Update ifRolling) )
 
         ToggleDice dice_id ->
             ( Model (applyOn toggleDice dice_id model.dices) model.numRolls
             , Cmd.none
             )
 
+        Update method newDices ->
+            update ShowFaces (updateDices model method newDices)
+
 
 prepareModelForRoll : Model -> Model
 prepareModelForRoll model =
-    { model | numRolls = model.numRolls + 1 }
+    if roundHasEnded model then
+        Model (List.repeat numDices (Dice Unlocked 1 0)) 1
+
+    else
+        { model | numRolls = model.numRolls + 1 }
+
+
+roundHasEnded : Model -> Bool
+roundHasEnded model =
+    model.numRolls == 3 || List.all (\dice -> dice.status == Locked) model.dices
 
 
 toggleDice : Dice -> Dice
@@ -153,8 +166,8 @@ applyOn callable index list =
         list
 
 
-generateNewFacesThen : (List Dice -> Msg) -> Cmd Msg
-generateNewFacesThen message =
+generateNewDicesThen : (List Dice -> Msg) -> Cmd Msg
+generateNewDicesThen message =
     Random.generate message
         (Random.list numDices
             (Random.map2 (Dice Unlocked) (Random.int 1 6) (Random.int 1 15))
@@ -166,9 +179,9 @@ oneStillRolling dices =
     List.any (\dice -> dice.reboundsLeft > 0) dices
 
 
-updateDices : Model -> (Dice -> Dice -> Dice) -> List Dice -> Msg
+updateDices : Model -> (Dice -> Dice -> Dice) -> List Dice -> Model
 updateDices model updateMethod newDices =
-    ShowFaces (List.map2 updateMethod model.dices newDices)
+    { model | dices = List.map2 updateMethod model.dices newDices }
 
 
 ifRolling : Dice -> Dice -> Dice
