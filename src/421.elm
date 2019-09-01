@@ -139,7 +139,11 @@ prepareModelForRoll model =
 
 roundHasEnded : Model -> Bool
 roundHasEnded model =
-    model.numRolls == 3 || List.all (\dice -> dice.status == Locked) model.dices
+    model.numRolls
+        == 0
+        || model.numRolls
+        == 3
+        || List.all (\dice -> dice.status == Locked) model.dices
 
 
 toggleDice : Dice -> Dice
