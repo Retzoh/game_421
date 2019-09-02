@@ -39,6 +39,11 @@ type alias Model =
     }
 
 
+numDices : Int
+numDices =
+    3
+
+
 type alias Dice =
     { status : Status
     , face : Face
@@ -55,19 +60,19 @@ type alias Face =
     Int
 
 
+init : () -> ( Model, Cmd Msg )
+init _ =
+    ( Model (List.repeat numDices (Dice Unlocked 1 0)) 3
+    , Cmd.none
+    )
+
+
 type alias Dot =
     { coords : Coords, existsFor : List Face }
 
 
 type alias Coords =
     { x : String, y : String }
-
-
-init : () -> ( Model, Cmd Msg )
-init _ =
-    ( Model (List.repeat numDices (Dice Unlocked 1 0)) 3
-    , Cmd.none
-    )
 
 
 dots : List Dot
@@ -87,11 +92,6 @@ dotExistsFor face dot =
     List.member face dot.existsFor
 
 
-numDices : Int
-numDices =
-    3
-
-
 
 -- UPDATE
 
@@ -102,7 +102,7 @@ type Msg
     | ShowFaces
     | Rebound
     | LockDice Int
-    | EndTurn
+    | NewTurn
 
 
 updateAppWith : Msg -> Model -> ( Model, Cmd Msg )
@@ -133,8 +133,8 @@ updateAppWith msg model =
             , Cmd.none
             )
 
-        EndTurn ->
-            ( prepareForNewTurn model, Cmd.none )
+        NewTurn ->
+            updateAppWith Roll (prepareForNewTurn model)
 
 
 oneStillRolling : List Dice -> Bool
@@ -243,8 +243,8 @@ view model =
 nextActionButtonFor : Model -> Html Msg
 nextActionButtonFor model =
     if turnHasEnded model then
-        button [ disabled (oneStillRolling model.dices), onClick EndTurn ]
-            [ Html.text "End turn" ]
+        button [ disabled (oneStillRolling model.dices), onClick NewTurn ]
+            [ Html.text "New turn" ]
 
     else
         button [ disabled (oneStillRolling model.dices), onClick Roll ]
