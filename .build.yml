@@ -40,7 +40,11 @@ tasks:
 - build: |
     cd $REPOSITORY_NAME
 
-    npm run build
+    # npm run build
+    npm run make
+    npm run minify
+    npm run escape_quotes
+    npm run build_worker
 
 - integration_tests: |
     echo "TODO"
