@@ -1,14 +1,16 @@
 module Main exposing (Model, Msg(..))
 
 import Browser
+import Css
+import Css.Global
 import Delay exposing (TimeUnit(..), after)
 import Dict exposing (Dict)
-import Html exposing (..)
-import Html.Attributes exposing (disabled, src)
-import Html.Events exposing (..)
+import Html.Styled exposing (..)
+import Html.Styled.Attributes exposing (disabled, src)
+import Html.Styled.Events exposing (onClick)
 import Random
-import Svg exposing (..)
-import Svg.Attributes exposing (..)
+import Svg.Styled exposing (..)
+import Svg.Styled.Attributes exposing (..)
 
 
 
@@ -25,7 +27,7 @@ main =
         { init = init
         , update = updateAppWith
         , subscriptions = subscriptions
-        , view = view
+        , view = view >> Html.Styled.toUnstyled
         }
 
 
@@ -228,15 +230,19 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
-    div []
-        [ div []
+    mainLayout []
+        [ rowLayout [] (drawDicesOf model)
+        , rowLayout []
             [ p []
-                [ Html.text
+                [ Html.Styled.text
                     ("Rolls left: " ++ String.fromInt model.rollsLeft)
                 ]
             , nextActionButtonFor model
             ]
-        , div [] (drawDicesOf model)
+        , Css.Global.global
+            [ Css.Global.body [ Css.height (Css.pct 100) ]
+            , Css.Global.html [ Css.height (Css.pct 100) ]
+            ]
         ]
 
 
@@ -244,11 +250,11 @@ nextActionButtonFor : Model -> Html Msg
 nextActionButtonFor model =
     if turnHasEnded model then
         button [ disabled (oneStillRolling model.dices), onClick NewTurn ]
-            [ Html.text "New turn" ]
+            [ Html.Styled.text "New turn" ]
 
     else
         button [ disabled (oneStillRolling model.dices), onClick Roll ]
-            [ Html.text "Roll" ]
+            [ Html.Styled.text "Roll" ]
 
 
 drawDicesOf : Model -> List (Html Msg)
@@ -260,7 +266,7 @@ drawDicesOf model =
 drawDice : Bool -> Int -> Dice -> Html Msg
 drawDice lockable withId dice =
     svg
-        ([ width "120", height "120", viewBox "0 0 120 120" ]
+        ([ width "100%", height "100%", viewBox "0 0 120 120" ]
             ++ actionFor lockable dice withId
         )
         [ g
@@ -269,7 +275,7 @@ drawDice lockable withId dice =
         ]
 
 
-actionFor : Bool -> Dice -> Int -> List (Svg.Attribute Msg)
+actionFor : Bool -> Dice -> Int -> List (Svg.Styled.Attribute Msg)
 actionFor lockable dice withId =
     -- dice should only be lockable when it's enabled and they are still
     if lockable && dice.reboundsLeft == 0 then
@@ -279,7 +285,7 @@ actionFor lockable dice withId =
         []
 
 
-colorOf : Dice -> List (Svg.Attribute Msg)
+colorOf : Dice -> List (Svg.Styled.Attribute Msg)
 colorOf dice =
     -- use dice color for strokes and fillings
     List.map (\x -> x (getColor dice)) [ stroke, fill ]
@@ -316,4 +322,28 @@ drawFace face =
 
 drawDot : Dot -> Svg msg
 drawDot { coords } =
-    circle [ cx coords.x, cy coords.y, Svg.Attributes.r "13" ] []
+    circle [ cx coords.x, cy coords.y, r "13" ] []
+
+
+mainLayout : List (Html.Styled.Attribute msg) -> List (Html msg) -> Html msg
+mainLayout =
+    Html.Styled.styled div
+        [ Css.maxWidth (Css.ch 70)
+        , Css.padding (Css.ch 2)
+        , Css.margin Css.auto
+        , Css.displayFlex
+        , Css.flexDirection Css.column
+        , Css.alignItems Css.center
+        , Css.justifyContent Css.center
+        , Css.height (Css.pct 100)
+        ]
+
+
+rowLayout : List (Html.Styled.Attribute msg) -> List (Html msg) -> Html msg
+rowLayout =
+    Html.Styled.styled div
+        [ Css.displayFlex
+        , Css.justifyContent Css.spaceAround
+        , Css.width (Css.pct 100)
+        , Css.alignItems Css.center
+        ]
