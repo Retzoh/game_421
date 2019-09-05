@@ -13,22 +13,22 @@ async function handleRequest(request) {
   )
 }
 
-const html = `<!DOCTYPE html>
-<html>
-    <head>
-      <meta charset="UTF-8">
-      <title>Main</title>
-    </head>
+const html = '<!DOCTYPE html>' +
+'<html>' +
+    '<head>' +
+      '<meta charset="UTF-8">' +
+      '<title>Main</title>' +
+    '</head>' +
+'' +
+    '<body>' +
+      '<div id="elm"></div>' +
+      '<script>' + '\
+    ELM_CODE
+' +
+          'var app = Elm.Main.init({' +
+              'node: document.getElementById("elm")' +
+          '});' +
+        '</script>' +
+    '</body>' +
+'</html>'
 
-    <body>
-      <div id="elm"></div>
-      <script>
-          ELM_CODE
-
-          var app = Elm.Main.init({
-              node: document.getElementById('elm')
-          });
-        </script>
-    </body>
-</html>
-`

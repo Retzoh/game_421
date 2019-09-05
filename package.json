@@ -8,8 +8,8 @@
     "format": "prettier --write '**/*.{js,css,json,md}'",
     "make":"elm make src/421.elm --optimize --output=build/elm.js",
     "minify": "uglifyjs build/elm.js --compress 'pure_funcs=[F2,F3,F4,F5,F6,F7,F8,F9,A2,A3,A4,A5,A6,A7,A8,A9],pure_getters,keep_fargs=false,unsafe_comps,unsafe' | uglifyjs --mangle --output=build/elm.min.js",
-    "escape_quotes":"sed -i 's/`//g' build/elm.min.js",
-    "build_worker":"sed -e '/ELM_CODE/ {' -e 'r build/elm.min.js' -e 'd' -e '}' -i worker/index.js",
+    "escape_quotes":"sed 's/\\\\/\\\\\\\\/g' build/elm.min.js | sed \"s/'/'+\\\"'\\\"+'/g\" > build/elm.min.escaped.js",
+    "build_worker":"sed -e '/ELM_CODE/ {' -e 'r build/elm.min.escaped.js' -e 'd' -e '}' -i worker/index.js",
     "build":"npm run make && npm run minify && npm run escape_quotes && npm run build_worker",
     "publish": "cd worker && wrangler publish"
   },
