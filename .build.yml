@@ -43,7 +43,7 @@ tasks:
     # npm run build
     npm run make
     npm run minify
-    npm run escape_quotes
+    npm run escape_code
     npm run build_worker
 
 - integration_tests: |
