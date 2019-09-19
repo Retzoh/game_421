@@ -2,7 +2,9 @@ module Main exposing (Model, Msg(..))
 
 import Browser
 import Css
+import Css.Animations
 import Css.Global
+import Css.Transitions exposing (easeInOut, transition)
 import Delay exposing (TimeUnit(..), after)
 import Dict exposing (Dict)
 import Html.Styled exposing (..)
@@ -15,11 +17,13 @@ import Svg.Styled.Attributes exposing (..)
 
 
 -- MAIN
+-- TODO: configure cloudflare hosting
 -- TODO: add game doc
 -- TODO: add history of actions
 -- TODO: Responsive design
 -- TODO: unit tests
 -- TODO: integration tests
+-- TODO: generate the rolling icon using svg
 
 
 main =
@@ -79,13 +83,13 @@ type alias Coords =
 
 dots : List Dot
 dots =
-    [ Dot (Coords "30" "30") [ 2, 3, 4, 5, 6 ]
-    , Dot (Coords "60" "30") [ 6 ]
-    , Dot (Coords "90" "30") [ 4, 5, 6 ]
+    [ Dot (Coords "32" "32") [ 2, 3, 4, 5, 6 ]
+    , Dot (Coords "60" "32") [ 6 ]
+    , Dot (Coords "88" "32") [ 4, 5, 6 ]
     , Dot (Coords "60" "60") [ 1, 3, 5 ]
-    , Dot (Coords "30" "90") [ 4, 5, 6 ]
-    , Dot (Coords "60" "90") [ 6 ]
-    , Dot (Coords "90" "90") [ 2, 3, 4, 5, 6 ]
+    , Dot (Coords "32" "88") [ 4, 5, 6 ]
+    , Dot (Coords "60" "88") [ 6 ]
+    , Dot (Coords "88" "88") [ 2, 3, 4, 5, 6 ]
     ]
 
 
@@ -253,8 +257,8 @@ nextActionButtonFor model =
             [ Html.Styled.text "New turn" ]
 
     else
-        button [ disabled (oneStillRolling model.dices), onClick Roll ]
-            [ Html.Styled.text "Roll" ]
+        rerollButton [ disabled (oneStillRolling model.dices), onClick Roll ]
+            [ rollingIcon ]
 
 
 drawDicesOf : Model -> List (Html Msg)
@@ -346,4 +350,103 @@ rowLayout =
         , Css.justifyContent Css.spaceAround
         , Css.width (Css.pct 100)
         , Css.alignItems Css.center
+        ]
+
+
+rerollButton : List (Html.Styled.Attribute Msg) -> List (Html Msg) -> Html Msg
+rerollButton =
+    Html.Styled.styled button
+        [ Css.backgroundColor (Css.hex "#0099FF")
+        , Css.color (Css.hex "#FFF")
+        , Css.border (Css.px 0)
+        , Css.cursor Css.pointer
+        , Css.padding (Css.px 0)
+        , Css.paddingLeft (Css.px 0)
+        , Css.paddingRight (Css.px 0)
+        , Css.borderRadius (Css.pct 100)
+        , Css.width (Css.rem 4)
+        , Css.height (Css.rem 4)
+        , Css.display Css.inlineFlex
+        , Css.justifyContent Css.center
+        , Css.outline Css.none
+        , Css.hover
+            [ Css.transform (Css.scale 1.1)
+            , Css.backgroundColor (Css.hex "#008ae6")
+            ]
+        , Css.focus
+            [ Css.boxShadow5
+                (Css.px 0)
+                (Css.px 0)
+                (Css.px 0)
+                (Css.rem 0.25)
+                (Css.hex "#c4e7ff")
+            ]
+        , Css.active
+            [ Css.animationName
+                (Css.Animations.keyframes
+                    [ ( 0
+                      , [ Css.Animations.property
+                            "transform"
+                            "rotate(0deg)"
+                        ]
+                      )
+                    , ( 100
+                      , [ Css.Animations.property
+                            "transform"
+                            "rotate(360deg)"
+                        ]
+                      )
+                    ]
+                )
+            , Css.animationDuration (Css.ms 500)
+            ]
+        ]
+
+
+rollingIconOld : Html Msg
+rollingIconOld =
+    svg
+        [ width "30px", height "30px", viewBox "0 0 240 240" ]
+        [ g [ stroke "black", fill "black" ] (drawBorder ++ drawFace 5) ]
+
+
+rollingIcon : Html Msg
+rollingIcon =
+    svg
+        [ width "32px", height "32px", viewBox "0 0  32 32" ]
+        [ Svg.Styled.path
+            [ fill "currentColor"
+            , fillRule "nonzero"
+            , stroke "none"
+            , strokeWidth "1"
+            , d
+                ("M7.38 5.555l15.592-1.367A3.419 3.419 0 0126.673 7.3L28.05"
+                    ++ " 23.06a3.422 3.422 0 01-3.106 3.71L9.352 28.137a3.419 "
+                    ++ "3.419 0 01-3.702-3.113L4.275 9.265a3.422 3.422 0 013."
+                    ++ "106-3.71zm.2 2.274a1.14 1.14 0 00-1.036 1.237l1.375 15"
+                    ++ ".759a1.14 1.14 0 001.234 1.038l15.591-1.368a1.14 1.14 "
+                    ++ "0 001.036-1.236l-1.376-15.76a1.14 1.14 0 00-1.234-1.0"
+                    ++ "37L7.58 7.829zm3.254 5.39a1.69 1.69 0 01-1.825-1.545 "
+                    ++ "1.692 1.692 0 011.53-1.84 1.69 1.69 0 011.825 1.546 "
+                    ++ "1.692 1.692 0 01-1.53 1.839zm10.065-.883a1.69 1.69 0 "
+                    ++ "01-1.826-1.545 1.692 1.692 0 011.53-1.84 1.69 1.69 0 "
+                    ++ "011.825 1.546 1.692 1.692 0 01-1.53 1.84zM11.72 23.37"
+                    ++ "3a1.69 1.69 0 01-1.825-1.545 1.692 1.692 0 011.53-1.84"
+                    ++ " 1.69 1.69 0 011.825 1.545 1.692 1.692 0 01-1.53 1.84z"
+                    ++ "m10.065-.883a1.69 1.69 0 01-1.825-1.545 1.692 1.692 0 "
+                    ++ "011.53-1.84 1.69 1.69 0 011.825 1.546 1.692 1.692 0 01"
+                    ++ "-1.53 1.84zm-5.476-4.635a1.69 1.69 0 01-1.825-1.546 1.6"
+                    ++ "92 1.692 0 011.53-1.839 1.69 1.69 0 011.825 1.545 1.692"
+                    ++ " 1.692 0 01-1.53 1.84zM29.183 6.823l-.015.002A.915.915 "
+                    ++ "0 0128.167 6c-.265-2.544-2.523-4.39-5.045-4.121h-.007a."
+                    ++ "916.916 0 01-1.002-.824.922.922 0 01.808-1.018h.002l.00"
+                    ++ "7-.001a6.387 6.387 0 014.718 1.408 6.498 6.498 0 012.34"
+                    ++ "7 4.363.922.922 0 01-.812 1.016zM8.547 32h-.008a6.395 6"
+                    ++ ".395 0 01-4.578-1.818 6.51 6.51 0 01-1.96-4.553.92.92 "
+                    ++ "0 01.895-.942h.016c.503-.008.917.4.926.91.044 2.559 2.1"
+                    ++ "34 4.595 4.67 4.55h.006a.918.918 0 01.927.91.92.92 0 01"
+                    ++ "-.894.943z"
+                )
+            ]
+            []
         ]
