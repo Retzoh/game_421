@@ -235,19 +235,17 @@ subscriptions model =
 view : Model -> Html Msg
 view model =
     mainLayout []
-        [ rowLayout [] (drawDicesOf model)
-        , rowLayout []
+        ([ rowLayout [] (drawDicesOf model)
+         , rowLayout []
             [ p []
                 [ Html.Styled.text
                     ("Rolls left: " ++ String.fromInt model.rollsLeft)
                 ]
             , nextActionButtonFor model
             ]
-        , Css.Global.global
-            [ Css.Global.body [ Css.height (Css.pct 100) ]
-            , Css.Global.html [ Css.height (Css.pct 100) ]
-            ]
-        ]
+         ]
+            ++ globalStyles
+        )
 
 
 nextActionButtonFor : Model -> Html Msg
@@ -331,16 +329,7 @@ drawDot { coords } =
 
 mainLayout : List (Html.Styled.Attribute msg) -> List (Html msg) -> Html msg
 mainLayout =
-    Html.Styled.styled div
-        [ Css.maxWidth (Css.ch 70)
-        , Css.padding (Css.ch 2)
-        , Css.margin Css.auto
-        , Css.displayFlex
-        , Css.flexDirection Css.column
-        , Css.alignItems Css.center
-        , Css.justifyContent Css.center
-        , Css.height (Css.pct 100)
-        ]
+    Html.Styled.styled div mainLayoutStyles
 
 
 rowLayout : List (Html.Styled.Attribute msg) -> List (Html msg) -> Html msg
@@ -355,52 +344,7 @@ rowLayout =
 
 rerollButton : List (Html.Styled.Attribute Msg) -> List (Html Msg) -> Html Msg
 rerollButton =
-    Html.Styled.styled button
-        [ Css.backgroundColor (Css.hex "#0099FF")
-        , Css.color (Css.hex "#FFF")
-        , Css.border (Css.px 0)
-        , Css.cursor Css.pointer
-        , Css.padding (Css.px 0)
-        , Css.paddingLeft (Css.px 0)
-        , Css.paddingRight (Css.px 0)
-        , Css.borderRadius (Css.pct 100)
-        , Css.width (Css.rem 4)
-        , Css.height (Css.rem 4)
-        , Css.display Css.inlineFlex
-        , Css.justifyContent Css.center
-        , Css.outline Css.none
-        , Css.hover
-            [ Css.transform (Css.scale 1.1)
-            , Css.backgroundColor (Css.hex "#008ae6")
-            ]
-        , Css.focus
-            [ Css.boxShadow5
-                (Css.px 0)
-                (Css.px 0)
-                (Css.px 0)
-                (Css.rem 0.25)
-                (Css.hex "#c4e7ff")
-            ]
-        , Css.active
-            [ Css.animationName
-                (Css.Animations.keyframes
-                    [ ( 0
-                      , [ Css.Animations.property
-                            "transform"
-                            "rotate(0deg)"
-                        ]
-                      )
-                    , ( 100
-                      , [ Css.Animations.property
-                            "transform"
-                            "rotate(360deg)"
-                        ]
-                      )
-                    ]
-                )
-            , Css.animationDuration (Css.ms 500)
-            ]
-        ]
+    Html.Styled.styled button rollingButtonStyles
 
 
 rollingIconOld : Html Msg
@@ -450,3 +394,78 @@ rollingIcon =
             ]
             []
         ]
+
+
+
+-- Styles
+
+
+globalStyles : List (Html Msg)
+globalStyles =
+    [ Css.Global.global
+        [ Css.Global.body [ Css.height (Css.pct 100) ]
+        , Css.Global.html [ Css.height (Css.pct 100) ]
+        ]
+    ]
+
+
+mainLayoutStyles : List Css.Style
+mainLayoutStyles =
+    [ Css.maxWidth (Css.ch 70)
+    , Css.padding (Css.ch 2)
+    , Css.margin Css.auto
+    , Css.displayFlex
+    , Css.flexDirection Css.column
+    , Css.alignItems Css.center
+    , Css.justifyContent Css.center
+    , Css.height (Css.pct 100)
+    ]
+
+
+rollingButtonStyles : List Css.Style
+rollingButtonStyles =
+    [ Css.backgroundColor (Css.hex "#0099FF")
+    , Css.color (Css.hex "#FFF")
+    , Css.border (Css.px 0)
+    , Css.cursor Css.pointer
+    , Css.padding (Css.px 0)
+    , Css.paddingLeft (Css.px 0)
+    , Css.paddingRight (Css.px 0)
+    , Css.borderRadius (Css.pct 100)
+    , Css.width (Css.rem 4)
+    , Css.height (Css.rem 4)
+    , Css.display Css.inlineFlex
+    , Css.justifyContent Css.center
+    , Css.outline Css.none
+    , Css.hover
+        [ Css.transform (Css.scale 1.1)
+        , Css.backgroundColor (Css.hex "#008ae6")
+        ]
+    , Css.focus
+        [ Css.boxShadow5
+            (Css.px 0)
+            (Css.px 0)
+            (Css.px 0)
+            (Css.rem 0.25)
+            (Css.hex "#c4e7ff")
+        ]
+    , Css.active
+        [ Css.animationName
+            (Css.Animations.keyframes
+                [ ( 0
+                  , [ Css.Animations.property
+                        "transform"
+                        "rotate(0deg)"
+                    ]
+                  )
+                , ( 100
+                  , [ Css.Animations.property
+                        "transform"
+                        "rotate(360deg)"
+                    ]
+                  )
+                ]
+            )
+        , Css.animationDuration (Css.ms 500)
+        ]
+    ]
