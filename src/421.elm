@@ -255,8 +255,7 @@ nextActionButtonFor model =
             [ Html.Styled.text "New turn" ]
 
     else
-        rerollButton [ disabled (oneStillRolling model.dices), onClick Roll ]
-            [ rollingIcon ]
+        rerollButton (oneStillRolling model.dices)
 
 
 drawDicesOf : Model -> List (Html Msg)
@@ -334,17 +333,22 @@ mainLayout =
 
 rowLayout : List (Html.Styled.Attribute msg) -> List (Html msg) -> Html msg
 rowLayout =
-    Html.Styled.styled div
-        [ Css.displayFlex
-        , Css.justifyContent Css.spaceAround
-        , Css.width (Css.pct 100)
-        , Css.alignItems Css.center
-        ]
+    Html.Styled.styled div rowStyles
 
 
-rerollButton : List (Html.Styled.Attribute Msg) -> List (Html Msg) -> Html Msg
-rerollButton =
-    Html.Styled.styled button rollingButtonStyles
+rerollButton : Bool -> Html Msg
+rerollButton inactive =
+    if not inactive then
+        Html.Styled.styled button
+            activeRollingButtonStyles
+            [ disabled False, onClick Roll ]
+            [ rollingIcon ]
+
+    else
+        Html.Styled.styled button
+            inactiveRollingButtonStyles
+            [ disabled True, onClick Roll ]
+            [ rollingIcon ]
 
 
 rollingIconOld : Html Msg
@@ -422,10 +426,44 @@ mainLayoutStyles =
     ]
 
 
-rollingButtonStyles : List Css.Style
-rollingButtonStyles =
-    [ Css.backgroundColor (Css.hex "#0099FF")
-    , Css.color (Css.hex "#FFF")
+inactiveRollingButtonStyles : List Css.Style
+inactiveRollingButtonStyles =
+    baseRollingButtonStyles
+        ++ [ Css.backgroundColor (Css.hex "#66c2ff")
+           ]
+
+
+activeRollingButtonStyles : List Css.Style
+activeRollingButtonStyles =
+    baseRollingButtonStyles
+        ++ [ Css.backgroundColor (Css.hex "#0099FF")
+           , Css.active
+                [ Css.animationName
+                    (Css.Animations.keyframes
+                        [ ( 0
+                          , [ Css.Animations.property
+                                "transform"
+                                "rotate(0deg)"
+                            ]
+                          )
+                        , ( 100
+                          , [ Css.Animations.property
+                                "transform"
+                                "rotate(360deg)"
+                            ]
+                          )
+                        ]
+                    )
+                , Css.animationDuration (Css.ms 500)
+                ]
+           , Css.hover
+                [ Css.transform (Css.scale 1.1) ]
+           ]
+
+
+baseRollingButtonStyles : List Css.Style
+baseRollingButtonStyles =
+    [ Css.color (Css.hex "#FFF")
     , Css.border (Css.px 0)
     , Css.cursor Css.pointer
     , Css.padding (Css.px 0)
@@ -437,10 +475,6 @@ rollingButtonStyles =
     , Css.display Css.inlineFlex
     , Css.justifyContent Css.center
     , Css.outline Css.none
-    , Css.hover
-        [ Css.transform (Css.scale 1.1)
-        , Css.backgroundColor (Css.hex "#008ae6")
-        ]
     , Css.focus
         [ Css.boxShadow5
             (Css.px 0)
@@ -449,23 +483,13 @@ rollingButtonStyles =
             (Css.rem 0.25)
             (Css.hex "#c4e7ff")
         ]
-    , Css.active
-        [ Css.animationName
-            (Css.Animations.keyframes
-                [ ( 0
-                  , [ Css.Animations.property
-                        "transform"
-                        "rotate(0deg)"
-                    ]
-                  )
-                , ( 100
-                  , [ Css.Animations.property
-                        "transform"
-                        "rotate(360deg)"
-                    ]
-                  )
-                ]
-            )
-        , Css.animationDuration (Css.ms 500)
-        ]
+    ]
+
+
+rowStyles : List Css.Style
+rowStyles =
+    [ Css.displayFlex
+    , Css.justifyContent Css.spaceAround
+    , Css.width (Css.pct 100)
+    , Css.alignItems Css.center
     ]
