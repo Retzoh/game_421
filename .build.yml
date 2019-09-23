@@ -68,7 +68,9 @@ tasks:
     git push --set-upstream origin master
 
     # deploy worker
+    set +x
     . ~/.cloudflare/api_keys
+    set -x
     npm run publish
 
     else
