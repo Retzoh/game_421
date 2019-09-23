@@ -479,6 +479,7 @@ baseRollingButtonStyles =
     , Css.height (Css.rem 4)
     , Css.display Css.inlineFlex
     , Css.justifyContent Css.center
+    , Css.alignItems Css.center
     , Css.outline Css.none
     , Css.focus
         [ Css.boxShadow5
