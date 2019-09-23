@@ -26,13 +26,17 @@ tasks:
     nvm --version
     nvm install node
 
+    npm install -g npx
+
 - install_dependencies: |
     npm --version
     cd $REPOSITORY_NAME
 
     npm install
 
-    npm run elm --version
+    npx elm --version
+
+    npx wrangler --version
 
 - test: |
     echo "TODO"
