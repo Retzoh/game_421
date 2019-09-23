@@ -4,7 +4,7 @@
 An ELM implementation of the 421 dice game 
 ([rules in french](https://www.regles-de-jeux.com/regle-du-421/))
 
-It is not deployed on the web yet
+This app is deployed at [https://421-game.tk](https://421-game.tk)
 
 #### git.sr.ht repository
 

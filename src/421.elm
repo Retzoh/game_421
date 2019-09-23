@@ -20,10 +20,14 @@ import Svg.Styled.Attributes exposing (..)
 -- TODO: configure cloudflare hosting
 -- TODO: add game doc
 -- TODO: add history of actions
--- TODO: Responsive design
+-- TODO: manage User & party
 -- TODO: unit tests
 -- TODO: integration tests
 -- TODO: generate the rolling icon using svg
+-- TODO: add favicon
+-- TODO: change cloudflare keys
+-- TODO: set pointer on clickable dices
+-- TODO: gray-out dices that are not clickable
 
 
 main =
