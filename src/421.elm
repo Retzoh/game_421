@@ -238,25 +238,25 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
-    mainLayout []
-        ([ rowLayout [] (drawDicesOf model)
-         , rowLayout []
-            [ p []
-                [ Html.Styled.text
-                    ("Rolls left: " ++ String.fromInt model.rollsLeft)
-                ]
-            , nextActionButtonFor model
-            ]
-         ]
+    mainLayout
+        (rowLayout (drawDicesOf model)
+            ++ rowLayout
+                (rollsLeftIndication model.rollsLeft
+                    ++ nextActionButtonFor model
+                )
             ++ globalStyles
         )
 
 
-nextActionButtonFor : Model -> Html Msg
+rollsLeftIndication : Int -> List (Html Msg)
+rollsLeftIndication rollsLeft =
+    [ p [] [ Html.Styled.text ("Rolls left: " ++ String.fromInt rollsLeft) ] ]
+
+
+nextActionButtonFor : Model -> List (Html Msg)
 nextActionButtonFor model =
     if turnHasEnded model then
-        button [ disabled (oneStillRolling model.dices), onClick NewTurn ]
-            [ Html.Styled.text "New turn" ]
+        nextPlayerButton (oneStillRolling model.dices)
 
     else
         rerollButton (oneStillRolling model.dices)
@@ -268,6 +268,10 @@ drawDicesOf model =
     List.indexedMap (drawDice (model.rollsLeft < 3)) model.dices
 
 
+withBaseDotRadius =
+    "13"
+
+
 drawDice : Bool -> Int -> Dice -> Html Msg
 drawDice lockable withId dice =
     svg
@@ -276,7 +280,7 @@ drawDice lockable withId dice =
         )
         [ g
             (colorOf dice ++ [ strokeWidth "1.5" ])
-            (drawBorder ++ drawFace dice.face "13")
+            (drawBorder ++ drawFace dice.face withBaseDotRadius)
         ]
 
 
@@ -319,73 +323,160 @@ drawBorder =
 
 
 drawFace : Face -> String -> List (Svg msg)
-drawFace face radius =
-    List.map (drawDot radius) (List.filter (dotExistsFor face) dots)
+drawFace face withRadius =
+    List.map (drawDot withRadius) (List.filter (dotExistsFor face) dots)
 
 
 drawDot : String -> Dot -> Svg msg
-drawDot radius { coords } =
-    circle
-        [ cx coords.x
-        , cy coords.y
-        , r radius
+drawDot withRadius { coords } =
+    circle [ cx coords.x, cy coords.y, r withRadius ] []
+
+
+rerollButton : Bool -> List (Html Msg)
+rerollButton inactive =
+    [ Html.Styled.styled button
+        (case inactive of
+            True ->
+                inactiveRollingButtonStyles
+
+            False ->
+                activeRollingButtonStyles
+        )
+        [ disabled inactive, onClick Roll ]
+        rerollIcon
+    ]
+
+
+rerollIcon : List (Html Msg)
+rerollIcon =
+    [ svg
+        [ width "32"
+        , height "42"
+        , viewBox "-20 -20 160 160"
+        , fill "currentColor"
+        , fillRule "nonzero"
+        , stroke "currentColor"
+        , strokeWidth "11"
+        , transform "rotate(-7)"
+        ]
+        (drawBorder ++ drawFace 5 "3" ++ drawMovement)
+    ]
+
+
+drawMovement : List (Html Msg)
+drawMovement =
+    [ Svg.Styled.path
+        [ d
+            ("M 95 -10 a 30 30 0 0 1 35 35"
+                ++ "M -10 95 a 30 30 0 0 0 35 35"
+            )
+        , fill "none"
+        , strokeLinecap "round"
         ]
         []
+    ]
 
 
-mainLayout : List (Html.Styled.Attribute msg) -> List (Html msg) -> Html msg
-mainLayout =
-    Html.Styled.styled div mainLayoutStyles
+nextPlayerButton : Bool -> List (Html Msg)
+nextPlayerButton isInactive =
+    [ Html.Styled.styled button
+        (case isInactive of
+            True ->
+                inactiveRollingButtonStyles
+
+            False ->
+                activeRollingButtonStyles
+        )
+        [ disabled isInactive, onClick NewTurn ]
+        (nextPlayerIcon isInactive)
+    ]
 
 
-rowLayout : List (Html.Styled.Attribute msg) -> List (Html msg) -> Html msg
-rowLayout =
-    Html.Styled.styled div rowStyles
+type Position
+    = FrontActive
+    | FrontInactive
+    | Back
 
 
-rerollButton : Bool -> Html Msg
-rerollButton inactive =
-    if not inactive then
-        Html.Styled.styled button
-            activeRollingButtonStyles
-            [ disabled False, onClick Roll ]
-            [ rollingIcon ]
-
-    else
-        Html.Styled.styled button
-            inactiveRollingButtonStyles
-            [ disabled True, onClick Roll ]
-            [ rollingIcon ]
+type OnSide
+    = Left
+    | Right
 
 
-rollingIcon : Html Msg
-rollingIcon =
-    Html.Styled.styled button
-        activeRollingButtonStyles
-        []
-        [ svg
-            [ width "32"
-            , height "32"
-            , viewBox "-20 -20 160 160"
-            , fill "currentColor"
-            , fillRule "nonzero"
-            , stroke "currentColor"
-            , strokeWidth "11"
-            , transform "rotate(-7)"
-            ]
-            (drawBorder
-                ++ drawFace 5 "3"
-                ++ [ Svg.Styled.path
-                        [ d
-                            ("M 95 -10 a 30 30 0 0 1 35 35"
-                                ++ "M -10 95 a 30 30 0 0 0 35 35"
-                            )
-                        , fill "none"
-                        ]
-                        []
-                   ]
+nextPlayerIcon : Bool -> List (Html Msg)
+nextPlayerIcon isInactive =
+    [ svg
+        [ width "52"
+        , height "42"
+        , viewBox "-70 -70 140 140"
+        , fill "currentColor"
+        , fillRule "nonzero"
+        , stroke "currentColor"
+        , strokeWidth "5"
+        ]
+        [ g [ strokeLinejoin "round", strokeLinecap "round" ]
+            (drawPlayer Back
+                ++ drawPlayer
+                    (case isInactive of
+                        True ->
+                            FrontInactive
+
+                        False ->
+                            FrontActive
+                    )
+                ++ drawArrow Right
+                ++ drawArrow Left
             )
         ]
+    ]
+
+
+drawPlayer : Position -> List (Svg Msg)
+drawPlayer position =
+    [ g
+        (case position of
+            FrontActive ->
+                [ stroke "#0099FF" ]
+
+            FrontInactive ->
+                [ stroke "#66c2ff" ]
+
+            Back ->
+                [ fill "none", transform "translate(0,-20)" ]
+        )
+        [ polygon [ points "0,5 30,60 -30,60" ] []
+        , circle [ cx "0", cy "-10", r "20" ] []
+        ]
+    ]
+
+
+drawArrow : OnSide -> List (Svg Msg)
+drawArrow onSide =
+    [ g [ transform "translate(0,0)" ]
+        [ g
+            (case onSide of
+                Left ->
+                    [ transform "rotate(180)" ]
+
+                Right ->
+                    []
+            )
+            [ Svg.Styled.path [ d "M 55 28 a 29 29 0 0 0 5 -50", fill "none" ] []
+            , g [ transform "translate(60,-22),rotate(-45)" ]
+                [ polygon [ points "0,-10 10,0 0,-10 -10,0" ] [] ]
+            ]
+        ]
+    ]
+
+
+mainLayout : List (Html msg) -> Html msg
+mainLayout =
+    Html.Styled.styled div mainLayoutStyles []
+
+
+rowLayout : List (Html msg) -> List (Html msg)
+rowLayout content =
+    [ Html.Styled.styled div rowStyles [] content ]
 
 
 
@@ -417,8 +508,7 @@ mainLayoutStyles =
 inactiveRollingButtonStyles : List Css.Style
 inactiveRollingButtonStyles =
     baseRollingButtonStyles
-        ++ [ Css.backgroundColor (Css.hex "#66c2ff")
-           ]
+        ++ [ Css.backgroundColor (Css.hex "#66c2ff") ]
 
 
 activeRollingButtonStyles : List Css.Style
@@ -437,7 +527,7 @@ activeRollingButtonStyles =
                         , ( 100
                           , [ Css.Animations.property
                                 "transform"
-                                "rotate(360deg)"
+                                "rotate(-360deg)"
                             ]
                           )
                         ]
