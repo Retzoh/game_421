@@ -17,7 +17,6 @@ import Svg.Styled.Attributes exposing (..)
 
 
 -- MAIN
--- TODO: configure cloudflare hosting
 -- TODO: add game doc
 -- TODO: add history of actions
 -- TODO: manage User & party
@@ -25,7 +24,6 @@ import Svg.Styled.Attributes exposing (..)
 -- TODO: integration tests
 -- TODO: add favicon
 -- TODO: change cloudflare keys
--- TODO: set pointer on clickable dices
 -- TODO: reduce favicon dice size https://www.browserling.com/tools/image-to-base64
 
 
@@ -273,7 +271,8 @@ withBaseDotRadius =
 
 drawDice : Bool -> Int -> Dice -> Html Msg
 drawDice lockable withId dice =
-    svg
+    Svg.Styled.styled svg
+        (styleOf lockable dice)
         ([ width "100%", height "100%", viewBox "0 0 120 120" ]
             ++ actionFor lockable dice withId
         )
@@ -514,6 +513,7 @@ activeRollingButtonStyles : List Css.Style
 activeRollingButtonStyles =
     baseRollingButtonStyles
         ++ [ Css.backgroundColor (Css.hex "#0099FF")
+           , Css.cursor Css.pointer
            , Css.active
                 [ Css.animationName
                     (Css.Animations.keyframes
@@ -542,7 +542,6 @@ baseRollingButtonStyles : List Css.Style
 baseRollingButtonStyles =
     [ Css.color (Css.hex "#FFF")
     , Css.border (Css.px 0)
-    , Css.cursor Css.pointer
     , Css.padding (Css.px 0)
     , Css.paddingLeft (Css.px 0)
     , Css.paddingRight (Css.px 0)
@@ -571,3 +570,12 @@ rowStyles =
     , Css.width (Css.pct 100)
     , Css.alignItems Css.center
     ]
+
+
+styleOf : Bool -> Dice -> List Css.Style
+styleOf lockable dice =
+    if lockable && dice.reboundsLeft == 0 then
+        [ Css.cursor Css.pointer ]
+
+    else
+        []
