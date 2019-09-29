@@ -17,13 +17,13 @@ import Svg.Styled.Attributes exposing (..)
 
 
 -- MAIN
--- TODO: add game doc
 -- TODO: add history of actions
 -- TODO: manage User & party
 -- TODO: unit tests
 -- TODO: integration tests
 -- TODO: add favicon
 -- TODO: change cloudflare keys
+-- TODO: roll dice faces according to the real geometry
 -- TODO: reduce favicon dice size https://www.browserling.com/tools/image-to-base64
 
 
@@ -43,6 +43,7 @@ main =
 type alias Model =
     { dices : List Dice
     , rollsLeft : Int
+    , showInstructions : Bool
     }
 
 
@@ -69,7 +70,7 @@ type alias Face =
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( Model (List.repeat numDices (Dice Unlocked 1 0)) 3
+    ( Model (List.repeat numDices (Dice Unlocked 1 0)) 3 False
     , Cmd.none
     )
 
@@ -110,6 +111,7 @@ type Msg
     | Rebound
     | LockDice Int
     | NewTurn
+    | ToggleInstructions
 
 
 updateAppWith : Msg -> Model -> ( Model, Cmd Msg )
@@ -136,12 +138,17 @@ updateAppWith msg model =
             ( model, generateNewDicesThen (UpdateDices ifRollingAndUnlocked) )
 
         LockDice withId ->
-            ( Model (apply lockDice withId model.dices) model.rollsLeft
+            ( { model | dices = apply lockDice withId model.dices }
             , Cmd.none
             )
 
         NewTurn ->
             ( prepareForNewTurn model, Cmd.none )
+
+        ToggleInstructions ->
+            ( { model | showInstructions = not model.showInstructions }
+            , Cmd.none
+            )
 
 
 oneStillRolling : List Dice -> Bool
@@ -161,7 +168,9 @@ lockDice dice =
 
 prepareForNewTurn : Model -> Model
 prepareForNewTurn model =
-    Model (List.map (\dice -> { dice | status = Unlocked }) model.dices) 3
+    Model (List.map (\dice -> { dice | status = Unlocked }) model.dices)
+        3
+        model.showInstructions
 
 
 turnHasEnded : Model -> Bool
@@ -236,18 +245,112 @@ subscriptions model =
 view : Model -> Html Msg
 view model =
     mainLayout
-        (rowLayout (drawDicesOf model)
+        (titleAndNav
+            ++ rowLayout (drawDicesOf model)
             ++ rowLayout
                 (rollsLeftIndication model.rollsLeft
                     ++ nextActionButtonFor model
                 )
+            ++ (case model.showInstructions of
+                    True ->
+                        instructions
+
+                    False ->
+                        []
+               )
             ++ globalStyles
         )
 
 
+instructions : List (Html Msg)
+instructions =
+    [ Html.Styled.styled div
+        instructionStyles
+        []
+        ([ Html.Styled.h3 [] [ Html.Styled.text "Instructions" ]
+         , paragraph
+            ("You have up to three rolls to get the best dice combination. "
+                ++ "Click on a dice to lock or unlock it."
+            )
+         , paragraph
+            ("Here is the list of the combinations, in decreasing order of"
+                ++ " importance:"
+            )
+         , combinationTable
+         , paragraph
+            ("Between two combinations of a same category, the highest"
+                ++ " number wins. For example 654 wins over 321 and 532 wins "
+                ++ "over 221"
+            )
+         ]
+            ++ rowLayout
+                [ Html.Styled.styled button
+                    mainButtonStyles
+                    [ onClick ToggleInstructions ]
+                    [ Html.Styled.text "Got it !" ]
+                ]
+        )
+    ]
+
+
+combinationTable : Html Msg
+combinationTable =
+    Html.Styled.styled table
+        tableStyles
+        []
+        ([ combinationTableHeaders ]
+            ++ List.map combinationTableRow
+                [ ( "421", "8" )
+                , ( "111", "7" )
+                , ( "666, 116", "6" )
+                , ( "555, 115", "5" )
+                , ( "444, 114", "4" )
+                , ( "333, 113", "3" )
+                , ( "222, 112", "2" )
+                , ( "654, 543, 432, 321", "2" )
+                , ( "Others", "1" )
+                ]
+        )
+
+
+combinationTableHeaders : Html Msg
+combinationTableHeaders =
+    tr []
+        [ Html.Styled.styled th
+            [ Css.width (Css.pct 50) ]
+            []
+            [ Html.Styled.text "Combination"
+            ]
+        , Html.Styled.styled th
+            [ Css.width (Css.pct 50) ]
+            []
+            [ Html.Styled.text "Points"
+            ]
+        ]
+
+
+combinationTableRow : ( String, String ) -> Html Msg
+combinationTableRow ( combination, score ) =
+    tr []
+        [ td [] [ Html.Styled.text combination ]
+        , td [] [ Html.Styled.text score ]
+        ]
+
+
+titleAndNav : List (Html Msg)
+titleAndNav =
+    titleAndNavLayout
+        [ h1 [] [ Html.Styled.text "421 Game" ]
+        , Html.Styled.styled button
+            baseActiveButtonStyles
+            [ onClick ToggleInstructions ]
+            [ Html.Styled.text "i" ]
+        ]
+
+
 rollsLeftIndication : Int -> List (Html Msg)
 rollsLeftIndication rollsLeft =
-    [ p [] [ Html.Styled.text ("Rolls left: " ++ String.fromInt rollsLeft) ] ]
+    [ paragraph ("Rolls left: " ++ String.fromInt rollsLeft) ]
 
 
 nextActionButtonFor : Model -> List (Html Msg)
@@ -477,15 +580,30 @@ rowLayout content =
     [ Html.Styled.styled div rowStyles [] content ]
 
 
+titleAndNavLayout : List (Html msg) -> List (Html msg)
+titleAndNavLayout content =
+    [ Html.Styled.styled div titleAndNavRowStyles [] content ]
 
--- Styles
+
+paragraph : String -> Html Msg
+paragraph text =
+    Html.Styled.p [] [ Html.Styled.text text ]
+
+
+
+-- STYLES
 
 
 globalStyles : List (Html Msg)
 globalStyles =
     [ Css.Global.global
-        [ Css.Global.body [ Css.height (Css.pct 100) ]
-        , Css.Global.html [ Css.height (Css.pct 100) ]
+        [ Css.Global.body
+            [ Css.height (Css.pct 100)
+            , Css.fontFamilies [ "Montserrat" ]
+            , Css.textAlign Css.justify
+            ]
+        , Css.Global.html
+            [ Css.height (Css.pct 100) ]
         ]
     ]
 
@@ -500,21 +618,20 @@ mainLayoutStyles =
     , Css.alignItems Css.center
     , Css.justifyContent Css.center
     , Css.height (Css.pct 100)
+    , Css.position Css.relative
     ]
 
 
 inactiveRollingButtonStyles : List Css.Style
 inactiveRollingButtonStyles =
-    baseRollingButtonStyles
-        ++ [ Css.backgroundColor (Css.hex "#66c2ff") ]
+    baseIconButtonStyles
+        ++ [ Css.backgroundColor palette.light ]
 
 
 activeRollingButtonStyles : List Css.Style
 activeRollingButtonStyles =
-    baseRollingButtonStyles
-        ++ [ Css.backgroundColor (Css.hex "#0099FF")
-           , Css.cursor Css.pointer
-           , Css.active
+    baseActiveButtonStyles
+        ++ [ Css.active
                 [ Css.animationName
                     (Css.Animations.keyframes
                         [ ( 0
@@ -538,16 +655,33 @@ activeRollingButtonStyles =
            ]
 
 
-baseRollingButtonStyles : List Css.Style
-baseRollingButtonStyles =
-    [ Css.color (Css.hex "#FFF")
+baseActiveButtonStyles : List Css.Style
+baseActiveButtonStyles =
+    baseIconButtonStyles
+        ++ [ Css.cursor Css.pointer ]
+
+
+baseIconButtonStyles : List Css.Style
+baseIconButtonStyles =
+    baseButtonStyles
+        ++ [ Css.borderRadius (Css.pct 100)
+           , Css.width (Css.rem 4)
+           , Css.height (Css.rem 4)
+           , Css.fontSize (Css.px 25)
+           ]
+
+
+baseButtonStyles : List Css.Style
+baseButtonStyles =
+    [ Css.backgroundColor palette.medium
+    , Css.fontSize (Css.rem 1)
+    , Css.color palette.white
+    , Css.fontFamilies [ "Montserrat" ]
+    , Css.fontWeight (Css.int 500)
     , Css.border (Css.px 0)
     , Css.padding (Css.px 0)
     , Css.paddingLeft (Css.px 0)
     , Css.paddingRight (Css.px 0)
-    , Css.borderRadius (Css.pct 100)
-    , Css.width (Css.rem 4)
-    , Css.height (Css.rem 4)
     , Css.display Css.inlineFlex
     , Css.justifyContent Css.center
     , Css.alignItems Css.center
@@ -558,15 +692,45 @@ baseRollingButtonStyles =
             (Css.px 0)
             (Css.px 0)
             (Css.rem 0.25)
-            (Css.hex "#c4e7ff")
+            palette.ultraLight
         ]
+    , baseShadow
     ]
+
+
+instructionStyles : List Css.Style
+instructionStyles =
+    [ Css.position Css.absolute
+    , Css.backgroundColor palette.white
+    , Css.borderRadius (Css.ch 1)
+    , Css.padding (Css.ch 2)
+    , Css.width (Css.pct 90)
+    , baseShadow
+    ]
+
+
+mainButtonStyles : List Css.Style
+mainButtonStyles =
+    baseButtonStyles
+        ++ [ Css.padding (Css.ch 1)
+           , Css.borderRadius (Css.px 3)
+           , Css.hover [ Css.cursor Css.pointer ]
+           ]
 
 
 rowStyles : List Css.Style
 rowStyles =
+    baseRowStyles ++ [ Css.justifyContent Css.spaceAround ]
+
+
+titleAndNavRowStyles : List Css.Style
+titleAndNavRowStyles =
+    baseRowStyles ++ [ Css.justifyContent Css.spaceBetween ]
+
+
+baseRowStyles : List Css.Style
+baseRowStyles =
     [ Css.displayFlex
-    , Css.justifyContent Css.spaceAround
     , Css.width (Css.pct 100)
     , Css.alignItems Css.center
     ]
@@ -579,3 +743,28 @@ styleOf lockable dice =
 
     else
         []
+
+
+baseColor : Float -> Css.Color
+baseColor saturation =
+    Css.hsl 204 1 saturation
+
+
+palette =
+    { ultraLight = baseColor 0.88
+    , light = baseColor 0.7
+    , medium = baseColor 0.5
+    , white = Css.hex "#fff"
+    }
+
+
+baseShadow : Css.Style
+baseShadow =
+    Css.boxShadow4 (Css.px 0) (Css.px 2) (Css.px 6) (Css.hsla 0 0 0 0.2)
+
+
+tableStyles : List Css.Style
+tableStyles =
+    [ Css.width (Css.pct 100)
+    , Css.textAlign Css.center
+    ]
