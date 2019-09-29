@@ -144,7 +144,7 @@ updateAppWith msg model =
             )
 
         NewTurn ->
-            updateAppWith Roll (prepareForNewTurn model)
+            ( prepareForNewTurn model, Cmd.none )
 
 
 oneStillRolling : List Dice -> Bool
