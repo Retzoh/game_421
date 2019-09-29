@@ -26,7 +26,6 @@ import Svg.Styled.Attributes exposing (..)
 -- TODO: add favicon
 -- TODO: change cloudflare keys
 -- TODO: set pointer on clickable dices
--- TODO: gray-out dices that are not clickable
 -- TODO: reduce favicon dice size https://www.browserling.com/tools/image-to-base64
 
 
@@ -279,7 +278,7 @@ drawDice lockable withId dice =
             ++ actionFor lockable dice withId
         )
         [ g
-            (colorOf dice ++ [ strokeWidth "1.5" ])
+            (colorOf lockable dice ++ [ strokeWidth "1.5" ])
             (drawBorder ++ drawFace dice.face withBaseDotRadius)
         ]
 
@@ -294,15 +293,15 @@ actionFor lockable dice withId =
         []
 
 
-colorOf : Dice -> List (Svg.Styled.Attribute Msg)
-colorOf dice =
+colorOf : Bool -> Dice -> List (Svg.Styled.Attribute Msg)
+colorOf lockable dice =
     -- use dice color for strokes and fillings
-    List.map (\x -> x (getColor dice)) [ stroke, fill ]
+    List.map (\x -> x (getColorOf lockable dice)) [ stroke, fill ]
 
 
-getColor : Dice -> String
-getColor dice =
-    if dice.reboundsLeft == 0 then
+getColorOf : Bool -> Dice -> String
+getColorOf lockable dice =
+    if lockable && dice.reboundsLeft == 0 then
         case dice.status of
             Locked ->
                 "green"
