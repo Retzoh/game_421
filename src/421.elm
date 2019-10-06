@@ -246,19 +246,21 @@ view : Model -> Html Msg
 view model =
     mainLayout
         (titleAndNav
-            ++ rowLayout (drawDicesOf model)
-            ++ rowLayout
-                (rollsLeftIndication model.rollsLeft
-                    ++ nextActionButtonFor model
-                )
-            ++ (case model.showInstructions of
-                    True ->
-                        instructions
+            ++ contentLayout
+                (rowLayout (drawDicesOf model)
+                    ++ rowLayout
+                        (rollsLeftIndication model.rollsLeft
+                            ++ nextActionButtonFor model
+                        )
+                    ++ (case model.showInstructions of
+                            True ->
+                                instructions
 
-                    False ->
-                        []
-               )
-            ++ globalStyles
+                            False ->
+                                []
+                       )
+                    ++ globalStyles
+                )
         )
 
 
@@ -342,7 +344,7 @@ titleAndNav =
     titleAndNavLayout
         [ h1 [] [ Html.Styled.text "421 Game" ]
         , Html.Styled.styled button
-            baseActiveButtonStyles
+            (baseActiveButtonStyles 2.5)
             [ onClick ToggleInstructions ]
             [ Html.Styled.text "i" ]
         ]
@@ -575,6 +577,11 @@ mainLayout =
     Html.Styled.styled div mainLayoutStyles []
 
 
+contentLayout : List (Html Msg) -> List (Html Msg)
+contentLayout content =
+    [ Html.Styled.styled div contentLayoutStyles [] content ]
+
+
 rowLayout : List (Html msg) -> List (Html msg)
 rowLayout content =
     [ Html.Styled.styled div rowStyles [] content ]
@@ -601,6 +608,7 @@ globalStyles =
             [ Css.height (Css.pct 100)
             , Css.fontFamilies [ "Montserrat" ]
             , Css.textAlign Css.justify
+            , Css.margin (Css.px 0)
             ]
         , Css.Global.html
             [ Css.height (Css.pct 100) ]
@@ -611,26 +619,37 @@ globalStyles =
 mainLayoutStyles : List Css.Style
 mainLayoutStyles =
     [ Css.maxWidth (Css.ch 70)
-    , Css.padding (Css.ch 2)
+    , Css.paddingLeft (Css.ch 2)
+    , Css.paddingRight (Css.ch 2)
     , Css.margin Css.auto
+    , Css.position Css.relative
+    , Css.height (Css.pct 100)
     , Css.displayFlex
     , Css.flexDirection Css.column
     , Css.alignItems Css.center
+    , Css.justifyContent Css.stretch
+    ]
+
+
+contentLayoutStyles : List Css.Style
+contentLayoutStyles =
+    [ Css.displayFlex
+    , Css.flexDirection Css.column
+    , Css.alignItems Css.center
     , Css.justifyContent Css.center
-    , Css.height (Css.pct 100)
-    , Css.position Css.relative
+    , Css.height Css.inherit
     ]
 
 
 inactiveRollingButtonStyles : List Css.Style
 inactiveRollingButtonStyles =
-    baseIconButtonStyles
+    baseIconButtonStyles 4
         ++ [ Css.backgroundColor palette.light ]
 
 
 activeRollingButtonStyles : List Css.Style
 activeRollingButtonStyles =
-    baseActiveButtonStyles
+    baseActiveButtonStyles 4
         ++ [ Css.active
                 [ Css.animationName
                     (Css.Animations.keyframes
@@ -655,18 +674,18 @@ activeRollingButtonStyles =
            ]
 
 
-baseActiveButtonStyles : List Css.Style
-baseActiveButtonStyles =
-    baseIconButtonStyles
+baseActiveButtonStyles : Float -> List Css.Style
+baseActiveButtonStyles size =
+    baseIconButtonStyles size
         ++ [ Css.cursor Css.pointer ]
 
 
-baseIconButtonStyles : List Css.Style
-baseIconButtonStyles =
+baseIconButtonStyles : Float -> List Css.Style
+baseIconButtonStyles size =
     baseButtonStyles
         ++ [ Css.borderRadius (Css.pct 100)
-           , Css.width (Css.rem 4)
-           , Css.height (Css.rem 4)
+           , Css.width (Css.rem size)
+           , Css.height (Css.rem size)
            , Css.fontSize (Css.px 25)
            ]
 
@@ -704,7 +723,7 @@ instructionStyles =
     , Css.backgroundColor palette.white
     , Css.borderRadius (Css.ch 1)
     , Css.padding (Css.ch 2)
-    , Css.width (Css.pct 90)
+    , Css.width (Css.pct 85)
     , baseShadow
     ]
 
